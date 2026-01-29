@@ -1,12 +1,16 @@
 # CCA Project 2: Serverless Fullstack Deployment
 ### A Scalable, Highly Available Web Application on AWS and Netlify
 
-![Architecture Diagram](/assets/architecture.png)
+![Architecture Diagram](/public/assets/architecture.png)
 
 ## Overview
 This project demonstrates a production-grade fullstack architecture leveraging **AWS Serverless** technologies and **Netlify** for static hosting. The application frontend interacts with a decoupled backend API to display real-time metrics, logs, and request details.
-
 ---
+
+
+https://github.com/user-attachments/assets/7a33ebaa-a72f-448e-aa20-1105454c3c81
+
+
 
 ## Architecture Components
 
