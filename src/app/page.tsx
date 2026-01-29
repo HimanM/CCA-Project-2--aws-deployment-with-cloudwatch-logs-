@@ -49,7 +49,7 @@ export default function Home() {
       <div className={styles.container}>
         <h1 className={styles.title}>CCA Project 2</h1>
         <p className={styles.description}>
-          Deploy and monitor a fullstack (serverless backend) on AWS with Netlify,
+          Deploy and monitor a fullstack (serverless backend) on AWS with AWS Amplify,
           API Gateway, AWS Lambda and CloudWatch.
         </p>
 

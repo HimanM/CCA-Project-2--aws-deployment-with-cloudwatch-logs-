@@ -1,10 +1,10 @@
 # CCA Project 2: Serverless Fullstack Deployment
-### A Scalable, Highly Available Web Application on AWS and Netlify
+### A Scalable, Highly Available Web Application on AWS and AWS Amplify
 
 ![Architecture Diagram](/public/assets/architecture.png)
 
 ## Overview
-This project demonstrates a production-grade fullstack architecture leveraging **AWS Serverless** technologies and **Netlify** for static hosting. The application frontend interacts with a decoupled backend API to display real-time metrics, logs, and request details.
+This project demonstrates a production-grade fullstack architecture leveraging **AWS Serverless** technologies and **AWS Amplify** for static hosting. The application frontend interacts with a decoupled backend API to display real-time metrics, logs, and request details.
 ---
 
 
@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/7a33ebaa-a72f-448e-aa20-1105454c3c81
 ## Architecture Components
 
 *   **Frontend**: Next.js (Static Export) configured for highly efficient content delivery via CDNs.
-*   **Hosting**: Netlify (Frontend) and AWS Lambda (Backend).
+*   **Hosting**: AWS Amplify (Frontend) and AWS Lambda (Backend).
 *   **API Layer**: AWS API Gateway (HTTP API) acting as the secure entry point.
 *   **Compute**: AWS Lambda (Node.js 18.x) for serverless business logic execution.
 *   **Observability**: AWS CloudWatch for structured logging, metrics, and monitoring.
