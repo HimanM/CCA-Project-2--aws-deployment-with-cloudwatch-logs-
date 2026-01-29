@@ -1,36 +1,152 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CCA Project 2: Serverless Fullstack Deployment
+### A Scalable, Highly Available Web Application on AWS and Netlify
 
-## Getting Started
+![Architecture Diagram](/assets/architecture.png)
 
-First, run the development server:
+## Overview
+This project demonstrates a production-grade fullstack architecture leveraging **AWS Serverless** technologies and **Netlify** for static hosting. The application frontend interacts with a decoupled backend API to display real-time metrics, logs, and request details.
 
+---
+
+## Architecture Components
+
+*   **Frontend**: Next.js (Static Export) configured for highly efficient content delivery via CDNs.
+*   **Hosting**: Netlify (Frontend) and AWS Lambda (Backend).
+*   **API Layer**: AWS API Gateway (HTTP API) acting as the secure entry point.
+*   **Compute**: AWS Lambda (Node.js 18.x) for serverless business logic execution.
+*   **Observability**: AWS CloudWatch for structured logging, metrics, and monitoring.
+
+---
+
+## Step 1: Backend API Configuration (AWS)
+
+Follow these steps to provision the backend infrastructure using the AWS Console.
+
+### 1. Create the Lambda Function
+1.  Navigate to **AWS Console > Lambda > Create function**.
+2.  Select **Author from scratch**.
+3.  Enter the details:
+    *   **Function name**: `monitor-api`
+    *   **Runtime**: `Node.js 25.x`
+    *   **Architecture**: `x86_64`
+4.  Under **Permissions**, create a new role with basic Lambda permissions.
+5.  Click **Create function**.
+
+**Deploy Code**:
+Navigate to the **Code** tab and paste the following handler:
+```javascript
+exports.handler = async (event) => {
+  console.log("Incoming event:", JSON.stringify(event));
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "API is working",
+      method: event.requestContext?.http?.method,
+      path: event.rawPath,
+      time: new Date().toISOString(),
+    }),
+  };
+};
+```
+Click **Deploy**.
+
+**Verify Permissions**:
+Go to **Configuration > Permissions**. Ensure the Execution Role has `AWSLambdaBasicExecutionRole` attached to allow CloudWatch logging.
+
+### 2. Configure API Gateway
+1.  Navigate to **AWS Console > API Gateway > Create API**.
+2.  Select **HTTP API** and click **Build**.
+3.  **Integration**:
+    *   Select **Lambda**.
+    *   Target: `monitor-api`.
+4.  **Routes**:
+    *   Method: `ANY`
+    *   Resource path: `/api/{proxy+}`
+5.  **Stages**:
+    *   Name: `prod`
+    *   Enable **Auto-deploy**.
+6.  Click **Create**.
+
+### 3. Enable Observability
+1.  In your new API, go to **Monitor > Logging**.
+2.  Enable **Access logging**.
+3.  Set a standard log format (e.g., `$context.requestId $context.httpMethod $context.path $context.status`).
+4.  Save changes.
+
+### 4. Retrieve API Endpoint
+Copy your **Invoke URL** from the API details page. It will resemble:
+`https://abc123.execute-api.us-east-1.amazonaws.com`
+
+Your functional endpoint is:
+`https://abc123.execute-api.us-east-1.amazonaws.com/api/test`
+
+---
+
+## Step 2: Validation
+
+### Terminal Test
+Validate the deployment using `curl`:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+curl -X POST https://your-api-url/api/test \
+  -H "Content-Type: application/json" \
+  -d '{"hello":"world"}'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### CloudWatch Verification
+1.  **Lambda Logs**: Check Log Group `/aws/lambda/monitor-api`.
+2.  **Metrics**: View API Gateway metrics for `Count`, `Latency`, and `4XX/5XX` errors.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Step 3: Frontend Deployment
 
-## Learn More
+1.  Clone this repository.
+2.  Create `.env.local` with your API URL:
+    ```bash
+    NEXT_PUBLIC_API_URL=https://your-api-url/api/test
+    ```
+3.  Install dependencies: `npm install`
+4.  Run locally: `npm run dev`
+5.  Build for production: `npm run build`
 
-To learn more about Next.js, take a look at the following resources:
+### Option A: Deploy to AWS Amplify (Recommended)
+This workflow connects your Git repository to AWS Amplify for continuous deployment/CI.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1.  **Push Code**: Commit and push your code to a Git repository (GitHub, GitLab, AWS CodeCommit, etc.).
+2.  **Amplify Console**:
+    *   Go to **AWS Console > Amplify > Create new app**.
+    *   Select your repository provider and branch.
+3.  **Build Settings**:
+    *   Amplify will automatically detect Next.js.
+    *   Ensure the **Build command** is `npm run build`.
+    *   Ensure the **Base directory** is `out` (critical for static export).
+4.  **Environment Variables**:
+    *   Expand **Advanced settings** (or go to **Environment variables** in App settings).
+    *   Add Key: `NEXT_PUBLIC_API_URL`
+    *   Value: `https://your-api-url/api/test` (The Invoke URL from Step 1)
+5.  **Deploy**: Click **Save and Deploy**. Use the provided Amplify URL to test.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Option B: Deploy to Netlify
+1.  Run locally: `npm run dev`
+2.  Build for production: `npm run build`
+3.  Deploy the `out` directory to Netlify manually, or connect your Git repo.
+    *   ensure to set `NEXT_PUBLIC_API_URL` in **Site configuration > Environment variables**.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Infrastructure as Code (Optional)
+For production environments, we recommend using Terraform:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```hcl
+resource "aws_lambda_function" "api" {
+  function_name = "monitor-api"
+  runtime       = "nodejs18.x"
+  handler       = "index.handler"
+}
+
+resource "aws_apigatewayv2_api" "http_api" {
+  name          = "monitor-http-api"
+  protocol_type = "HTTP"
+}
+```

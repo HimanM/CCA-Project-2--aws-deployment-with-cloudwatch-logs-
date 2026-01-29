@@ -1,0 +1,284 @@
+Got it — let’s do this **slow, exact, click-by-click**, starting from **AWS Console**, and I’ll also show the **CLI / IaC alternatives** at the end so you understand *all* ways, not just one.
+
+We’ll build **STEP 1: Backend API** properly.
+
+---
+
+# 🟢 STEP 1 — Create the Backend API (AWS Console)
+
+We’ll do this in **this exact order**:
+
+1. Lambda
+2. API Gateway (HTTP API)
+3. Connect them
+4. Verify logs in CloudWatch
+
+---
+
+## 1️⃣ Create the Lambda function (AWS Console)
+
+### Go to:
+
+**AWS Console → Lambda → Create function**
+
+### Choose:
+
+* **Author from scratch**
+* Function name:
+
+  ```
+  monitor-api
+  ```
+* Runtime:
+
+  ```
+  Node.js 18.x
+  ```
+* Architecture:
+
+  ```
+  x86_64
+  ```
+
+### Permissions:
+
+* Execution role → **Create a new role**
+* Role name auto-generated (fine)
+
+👉 Click **Create function**
+
+---
+
+### Add the Lambda code
+
+In the **Code tab**, replace everything with:
+
+```js
+exports.handler = async (event) => {
+  console.log("Incoming event:", JSON.stringify(event));
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "API is working",
+      method: event.requestContext?.http?.method,
+      path: event.rawPath,
+      time: new Date().toISOString(),
+    }),
+  };
+};
+```
+
+👉 Click **Deploy**
+
+---
+
+### Verify IAM permissions (important)
+
+Go to:
+
+* **Configuration → Permissions**
+* Click the role
+
+Make sure it has:
+
+```
+AWSLambdaBasicExecutionRole
+```
+
+✅ This allows logs → CloudWatch
+
+---
+
+## 2️⃣ Create API Gateway (HTTP API)
+
+### Go to:
+
+**AWS Console → API Gateway → Create API**
+
+Choose:
+
+* **HTTP API**
+* Click **Build**
+
+---
+
+### Integration step
+
+* Integration type: **Lambda**
+* Lambda function: `monitor-api`
+* Version: `$LATEST`
+
+Click **Next**
+
+---
+
+### Configure routes
+
+Add route:
+
+```
+ANY /api/{proxy+}
+```
+
+(This catches GET, POST, etc.)
+
+Click **Next**
+
+---
+
+### Stages
+
+* Stage name:
+
+  ```
+  prod
+  ```
+* Auto-deploy: ✅ enabled
+
+Click **Next → Create**
+
+---
+
+## 3️⃣ Enable logging & metrics (DO THIS)
+
+### In API Gateway:
+
+* Go to **APIs → your API → Logs**
+
+Enable:
+
+* ✅ Access logging
+* Log format (simple is fine)
+
+Example log format:
+
+```
+$context.requestId $context.httpMethod $context.path $context.status
+```
+
+Save changes.
+
+---
+
+### Copy your API Invoke URL
+
+It looks like:
+
+```
+https://abc123.execute-api.us-east-1.amazonaws.com
+```
+
+👉 Your API endpoint:
+
+```
+https://abc123.execute-api.us-east-1.amazonaws.com/api/test
+```
+
+---
+
+## 4️⃣ Test the API (browser / curl)
+
+### Browser test:
+
+Open:
+
+```
+https://abc123.execute-api.us-east-1.amazonaws.com/api/test
+```
+
+You should see JSON.
+
+---
+
+### POST test:
+
+```bash
+curl -X POST https://abc123.execute-api.us-east-1.amazonaws.com/api/test \
+  -H "Content-Type: application/json" \
+  -d '{"hello":"world"}'
+```
+
+---
+
+## 5️⃣ Verify monitoring (CloudWatch)
+
+### Lambda logs:
+
+* Go to **CloudWatch → Logs**
+* Log group:
+
+  ```
+  /aws/lambda/monitor-api
+  ```
+
+You should see request logs.
+
+---
+
+### API Gateway metrics:
+
+* CloudWatch → Metrics → API Gateway
+* Metrics:
+
+  * Count
+  * Latency
+  * 4XX / 5XX
+
+🎉 Backend is now **fully observable**
+
+---
+
+# 🟦 SAME SETUP — Using AWS CLI (optional but SRE-friendly)
+
+Once you’re comfortable, this is how it’s *automated*:
+
+```bash
+aws lambda create-function ...
+aws apigatewayv2 create-api ...
+aws apigatewayv2 create-route ...
+aws apigatewayv2 create-integration ...
+```
+
+(Usually done via Terraform — see below)
+
+---
+
+# 🟪 SAME SETUP — Terraform (REAL WORLD)
+
+```hcl
+resource "aws_lambda_function" "api" {
+  function_name = "monitor-api"
+  runtime       = "nodejs18.x"
+  handler       = "index.handler"
+}
+
+resource "aws_apigatewayv2_api" "http_api" {
+  name          = "monitor-http-api"
+  protocol_type = "HTTP"
+}
+```
+
+This is how teams *actually* do it.
+
+---
+
+# ✅ What you now have
+
+✔ API Gateway (HTTP API)
+✔ Lambda backend
+✔ Logs in CloudWatch
+✔ Metrics for GET / POST
+✔ Ready to connect to Next.js
+
+---
+
+## Next step (tell me which one you want):
+
+1. 🔗 **Connect this API to your Next.js frontend**
+2. 🌐 **Fix CORS properly**
+3. 🚨 **Add CloudWatch alarms**
+4. 📦 **Terraform full setup**
+5. 🔐 **Add auth (Cognito)**
+
+Say the number — we’ll go step by step again 👍

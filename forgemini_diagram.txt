@@ -1,0 +1,40 @@
+                 ┌───────────────────────────┐
+                 │        User / Browser      │
+                 └────────────┬─────────────┘
+                              │
+                  (requests static pages or calls API)
+                              │
+                              ▼
+                 ┌───────────────────────────┐
+                 │   CloudFront (CDN)       │
+                 │ - Serves Next.js static  │
+                 │ - Handles HTTPS, caching │
+                 │ - Metrics → CloudWatch   │
+                 └────────────┬─────────────┘
+                              │
+      ┌───────────────────────┴────────────────────────┐
+      │                                                │
+      ▼                                                ▼
+┌───────────────┐                              ┌────────────────┐
+│    S3 Bucket  │                              │   API Gateway  │
+│ - Static Next │                              │ - HTTP API    │
+│   JS files    │                              │ - Routes:    │
+│ - Amplify CI/CD│                              │   GET / POST │
+└───────────────┘                              └──────────────┬─┘
+                                                              │
+                                                              ▼
+                                                      ┌─────────────┐
+                                                      │   Lambda    │
+                                                      │ - Handles  │
+                                                      │   GET/POST │
+                                                      │ - Logs to  │
+                                                      │   CloudWatch
+                                                      └─────────────┘
+                                                              │
+                                                              ▼
+                                                      ┌─────────────┐
+                                                      │ CloudWatch  │
+                                                      │ - Logs      │
+                                                      │ - Metrics   │
+                                                      │ - Alarms    │
+                                                      └─────────────┘
