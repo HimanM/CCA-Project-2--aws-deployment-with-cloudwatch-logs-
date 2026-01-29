@@ -27,7 +27,7 @@ Follow these steps to provision the backend infrastructure using the AWS Console
 2.  Select **Author from scratch**.
 3.  Enter the details:
     *   **Function name**: `monitor-api`
-    *   **Runtime**: `Node.js 25.x`
+    *   **Runtime**: `Node.js 24.x`
     *   **Architecture**: `x86_64`
 4.  Under **Permissions**, create a new role with basic Lambda permissions.
 5.  Click **Create function**.
@@ -35,11 +35,15 @@ Follow these steps to provision the backend infrastructure using the AWS Console
 **Deploy Code**:
 Navigate to the **Code** tab and paste the following handler:
 ```javascript
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log("Incoming event:", JSON.stringify(event));
 
   return {
     statusCode: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    },
     body: JSON.stringify({
       message: "API is working",
       method: event.requestContext?.http?.method,
@@ -48,6 +52,7 @@ exports.handler = async (event) => {
     }),
   };
 };
+
 ```
 Click **Deploy**.
 
